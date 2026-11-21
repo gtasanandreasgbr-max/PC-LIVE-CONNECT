@@ -1,0 +1,53 @@
+{
+  "name": "pc-live-connect",
+  "productName": "PC Live Connect",
+  "version": "1.0.0",
+  "description": "Transmissão profissional de tela e áudio em tempo real entre PCs Windows com integração OBS Studio",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "ffmpeg-static": "^5.2.0"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.pcliveconnect.desktop",
+    "productName": "PC Live Connect",
+    "copyright": "Copyright © 2026 PC Live Connect",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "PC-Live-Connect-Setup-${version}-x64.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PC Live Connect",
+      "uninstallDisplayName": "PC Live Connect"
+    }
+  }
+}
