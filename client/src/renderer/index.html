@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PC Live Connect — Transmissão Profissional</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">●</div>
+        <div>
+          <h1>PC LIVE CONNECT</h1>
+          <span>PRO BROADCAST SUITE</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-view="transmitter">
+          <span class="icon">📡</span> PC 1 — Transmissor
+        </button>
+        <button class="nav-btn" data-view="receiver">
+          <span class="icon">🖥️</span> PC 2 — Receptor & OBS
+        </button>
+        <button class="nav-btn" data-view="settings">
+          <span class="icon">⚙️</span> Configurações & Servidor
+        </button>
+      </nav>
+
+      <div class="server-pill" id="serverStatusPill">
+        <span class="dot offline" id="wsStatusDot"></span>
+        <div>
+          <strong id="wsStatusText">Servidor Desconectado</strong>
+          <small id="wsUrlLabel">ws://localhost:8443</small>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <section id="view-transmitter" class="view active">
+        <header class="view-header">
+          <div>
+            <h2>Modo Transmissor (PC 1 — Jogos / Captura)</h2>
+            <p>Capture tela e áudio do sistema com baixa latência e envie para o PC de live.</p>
+          </div>
+          <div class="timer-badge" id="txTimer">00:00:00</div>
+        </header>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h3>1. Sessão e Código Seguro</h3>
+            <div class="code-box">
+              <span id="roomCodeDisplay">---- ----</span>
+              <button id="btnCopyCode" class="btn btn-secondary" disabled>Copiar Código</button>
+            </div>
+            <div class="btn-row">
+              <button id="btnCreateRoom" class="btn btn-primary">Gerar Nova Sessão</button>
+              <button id="btnSelectSources" class="btn btn-secondary">Selecionar Tela / Janela</button>
+            </div>
+
+            <h3 class="mt-20">2. Áudio e Microfone</h3>
+            <div class="control-group">
+              <label class="toggle-row">
+                <span>Capturar Áudio do Sistema (Estéreo)</span>
+                <input type="checkbox" id="chkSystemAudio" checked />
+              </label>
+              <label class="toggle-row">
+                <span>Ativar Microfone Separado</span>
+                <input type="checkbox" id="chkMicAudio" />
+              </label>
+              <select id="micSelect" class="input-field" disabled>
+                <option value="default">Microfone Padrão do Sistema</option>
+              </select>
+            </div>
+
+            <h3 class="mt-20">3. Parâmetros de Codificação</h3>
+            <div class="grid-3col-sm">
+              <div>
+                <label>FPS</label>
+                <select id="txFps" class="input-field">
+                  <option value="60" selected>60 FPS</option>
+                  <option value="30">30 FPS</option>
+                </select>
+              </div>
+              <div>
+                <label>Codec</label>
+                <select id="txCodec" class="input-field">
+                  <option value="H264" selected>H.264 (Hardware)</option>
+                  <option value="VP8">VP8</option>
+                </select>
+              </div>
+              <div>
+                <label>Bitrate (kbps)</label>
+                <input type="number" id="txBitrate" class="input-field" value="4500" min="1000" max="15000" step="500" />
+              </div>
+            </div>
+
+            <div class="btn-row mt-20">
+              <button id="btnStartTx" class="btn btn-success full-width" disabled>▶ Iniciar Transmissão</button>
+              <button id="btnStopTx" class="btn btn-danger full-width" hidden>■ Encerrar Transmissão</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Pré-visualização Local (720p)</h3>
+            <div class="video-container">
+              <video id="localPreview" autoplay muted playsinline></video>
+              <div class="video-placeholder" id="txPlaceholder">
+                Selecione uma tela ou janela para visualizar a captura
+              </div>
+            </div>
+
+            <h3 class="mt-20">Telas e Janelas Disponíveis</h3>
+            <div id="sourcesGrid" class="sources-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-receiver" class="view">
+        <header class="view-header">
+          <div>
+            <h2>Modo Receptor (PC 2 — OBS Studio)</h2>
+            <p>Receba o sinal remoto e envie diretamente para o OBS Studio sem perda de quadros.</p>
+          </div>
+          <div class="receiver-connect-bar">
+            <input type="text" id="inputJoinCode" class="input-code" placeholder="EX: ABCD-1234" maxlength="9" />
+            <button id="btnJoinRoom" class="btn btn-primary">Conectar</button>
+            <button id="btnLeaveRoom" class="btn btn-danger" hidden>Desconectar</button>
+          </div>
+        </header>
+
+        <div class="card">
+          <div class="video-container large" id="rxVideoWrapper">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="video-placeholder" id="rxPlaceholder">
+              Insira o código gerado no PC 1 e clique em Conectar
+            </div>
+          </div>
+
+          <div class="rx-toolbar">
+            <div class="volume-control">
+              <span>🔊 Volume:</span>
+              <input type="range" id="rxVolume" min="0" max="1" step="0.01" value="1" />
+              <span id="rxVolumeLabel">100%</span>
+            </div>
+
+            <div class="obs-controls">
+              <button id="btnObsVirtualCam" class="btn btn-emerald">🎥 Ativar Câmera Virtual OBS</button>
+              <button id="btnObsCleanWindow" class="btn btn-secondary">🪟 Janela Limpa OBS (720p)</button>
+              <button id="btnFullscreen" class="btn btn-secondary">⛶ Tela Cheia</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <header class="view-header">
+          <div>
+            <h2>Configurações de Infraestrutura & OBS</h2>
+            <p>Configure o endereço do servidor de sinalização, dispositivos de saída e comportamento de rede.</p>
+          </div>
+        </header>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h3>Servidor de Sinalização (WSS)</h3>
+            <label>URL do Servidor WebSocket</label>
+            <input type="text" id="cfgSignalingUrl" class="input-field" placeholder="wss://seu-servidor.com:8443" />
+
+            <label class="toggle-row mt-15">
+              <span>Reconexão Automática em Queda de Rede</span>
+              <input type="checkbox" id="cfgAutoReconnect" checked />
+            </label>
+
+            <label class="toggle-row mt-15">
+              <span>Ajuste Dinâmico de Bitrate (Adaptive Bitrate)</span>
+              <input type="checkbox" id="cfgAutoQuality" checked />
+            </label>
+
+            <h3 class="mt-20">Roteamento de Áudio e Câmera Virtual (OBS)</h3>
+            <label>Saída de Áudio Dedicada (ex: CABLE Input para OBS)</label>
+            <select id="cfgAudioOutput" class="input-field"></select>
+
+            <label class="mt-15">Dispositivo DirectShow Virtual Camera</label>
+            <input type="text" id="cfgVirtualCamDevice" class="input-field" value="Unity Video Capture" />
+
+            <button id="btnSaveSettings" class="btn btn-primary mt-20">Salvar Configurações</button>
+          </div>
+
+          <div class="card">
+            <h3>Histórico de Transmissões Locais</h3>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Modo</th>
+                  <th>Código</th>
+                  <th>Duração</th>
+                  <th>Bitrate Médio</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <footer class="telemetry-bar">
+        <div class="metric">
+          <span class="label">CONEXÃO</span>
+          <strong id="statConnState" class="val-neutral">Aguardando</strong>
+        </div>
+        <div class="metric">
+          <span class="label">RESOLUÇÃO</span>
+          <strong id="statResolution">1280×720</strong>
+        </div>
+        <div class="metric">
+          <span class="label">FPS (ENV / REC)</span>
+          <strong id="statFps">0 / 0 FPS</strong>
+        </div>
+        <div class="metric">
+          <span class="label">BITRATE VÍDEO</span>
+          <strong id="statVideoBitrate">0 kbps</strong>
+        </div>
+        <div class="metric">
+          <span class="label">BITRATE ÁUDIO</span>
+          <strong id="statAudioBitrate">0 kbps</strong>
+        </div>
+        <div class="metric">
+          <span class="label">LATÊNCIA (RTT)</span>
+          <strong id="statLatency">0 ms</strong>
+        </div>
+        <div class="metric">
+          <span class="label">PERDA PACOTES</span>
+          <strong id="statPacketLoss">0.0%</strong>
+        </div>
+        <div class="metric">
+          <span class="label">ROTA / TURN</span>
+          <strong id="statTurnState">Inativo</strong>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="js/signaling.js"></script>
+  <script src="js/capture.js"></script>
+  <script src="js/telemetry.js"></script>
+  <script src="js/webrtc.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
